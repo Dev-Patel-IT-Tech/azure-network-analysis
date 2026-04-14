@@ -2,7 +2,7 @@
 
 Hands-on Azure project deploying a multi-VM environment 
 and analyzing live network traffic using Wireshark across 
-five core protocols-ICMP, SSH, DHCP, DNS, and RDP—
+five core protocols-ICMP, SSH, DHCP, DNS, and RDP-
 with real-time Azure NSG firewall configuration and testing.
 
 ## Environment
