@@ -2,14 +2,14 @@
 
 Hands-on Azure project deploying a multi-VM environment 
 and analyzing live network traffic using Wireshark across 
-five core protocols — ICMP, SSH, DHCP, DNS, and RDP — 
+five core protocols-ICMP, SSH, DHCP, DNS, and RDP—
 with real-time Azure NSG firewall configuration and testing.
 
 ## Environment
 
-- Microsoft Azure — Resource Group: RG-Network-Activities
-- Windows 10 VM (windows-vm) — Private IP: 10.0.0.4
-- Ubuntu 24.04 VM (linix-vm) — Private IP: 10.0.0.5
+- Microsoft Azure-Resource Group: RG-Network-Activities
+- Windows 10 VM (windows-vm)-Private IP: 10.0.0.4
+- Ubuntu 24.04 VM (linix-vm)-Private IP: 10.0.0.5
 - Both VMs on the same Virtual Network: Lab01-Vnet/default
 - Region: Canada Central
 
@@ -28,4 +28,4 @@ with real-time Azure NSG firewall configuration and testing.
 
 ## Technologies Used
 Microsoft Azure - Windows 10 - Ubuntu 24.04 - Wireshark - 
-PowerShell - NSG - VNet - ICMP - SSH - DHCP - DNS - RDP - TCP/IP
+PowerShell-NSG-VNet-ICMP-SSH-DHCP-DNS-RDP-TCP/IP
