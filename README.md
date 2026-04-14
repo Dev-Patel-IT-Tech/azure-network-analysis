@@ -1,8 +1,12 @@
 # Azure Network Protocol Analysis
 
-Two-VM environment deployed in Microsoft Azure to analyze 
-live network traffic using Wireshark across five protocols, 
-with real-time NSG firewall configuration and testing.
+Two-VM environment deployed in Microsoft Azure to capture 
+and analyze live network traffic across five protocols using 
+Wireshark, with real-time NSG firewall rule testing.
+
+Built to develop hands-on understanding of how ICMP, SSH, 
+DHCP, DNS, and RDP behave at the packet level - protocols 
+that come up daily in IT support troubleshooting.
 
 ## Environment
 
@@ -10,139 +14,148 @@ with real-time NSG firewall configuration and testing.
 - Windows 10 VM (windows-vm) - Private IP: 10.0.0.4
 - Ubuntu 24.04 VM (linix-vm) - Private IP: 10.0.0.5
 - Virtual Network: Lab01-Vnet/default (shared across both VMs)
-
-## Tools Used
-
-Microsoft Azure - Windows 10 - Ubuntu 24.04 - Wireshark 
-- PowerShell - NSG - VNet
+- Tools: Microsoft Azure, Wireshark, PowerShell, NSG
 
 ---
 
 ## VM Deployment
 
 Two virtual machines deployed on the same Virtual Network 
-so they can communicate directly over private IP addresses.
+and Subnet so they can communicate directly using private 
+IP addresses without traversing the public internet.
 
-- Resource Group: RG-Network-Activities - Canada Central
-- Windows 10 VM: windows-vm - Standard D2s v3 - IP 10.0.0.4
-- Ubuntu 24.04 VM: linix-vm - Standard D2s v3 - IP 10.0.0.5
-- Virtual Network: Lab01-Vnet/default confirmed on both VMs
-
-Both VMs need to sit on the same VNet and Subnet to 
-communicate using private IPs. Confirmed on the 
-Networking tab of each VM before starting.
+Confirmed on the Networking tab of each VM that both show 
+Lab01-Vnet/default before starting any analysis. This is 
+a critical check - if the VMs were on different networks, 
+the private IP pings would fail and troubleshooting would 
+begin in the wrong place.
 
 ![Resource Group Created](images/01-resource-group-created.png)
 
-![Both VMs Running](images/02-03-both-vms-running.png)
+![Both VMs Running in Same Resource Group](images/02-03-both-vms-running.png)
 
-![Windows VM VNet Confirmed](images/04A-windows-vm-vnet.png)
+![Windows VM Virtual Network Confirmed](images/04A-windows-vm-vnet.png)
 
-![Linux VM VNet Confirmed](images/04B-linux-vm-vnet.png)
+![Linux VM Virtual Network Confirmed](images/04B-linux-vm-vnet.png)
 
 ---
 
 ## ICMP Analysis
 
-Connected to windows-vm via Remote Desktop and used 
-Wireshark to capture ICMP traffic between both VMs 
+Connected to windows-vm via Remote Desktop, installed 
+Wireshark, and captured ICMP traffic between both VMs 
 and toward an external address.
 
 - Applied icmp filter in Wireshark
-- Pinged linix-vm at 10.0.0.5 from windows-vm
-- Watched Echo Request and Echo Reply packets in real time
-- Pinged www.google.com to confirm external routing worked
-- 0 percent packet loss across both tests
+- Pinged linix-vm at 10.0.0.5 from windows-vm at 10.0.0.4
+- Observed Echo Request and Echo Reply packets in real time
+- Pinged www.google.com to confirm external routing
+- 0 percent packet loss on both tests
+- VM-to-VM latency: 1-20ms
+- External ping resolved to 142.251.157.119 at 8-9ms
 
-VM-to-VM ping ran at 1-20ms. External ping to google.com 
-resolved to 142.251.157.119 at 8-9ms.
+In real IT support, ping is usually the first tool used 
+to confirm whether a device is reachable. Watching the 
+request go out and the reply come back in Wireshark 
+shows exactly what is happening at the packet level 
+when a user says they cannot reach another machine.
 
-![ICMP Ping Between VMs](images/07-wireshark-icmp-ping-ubuntu.png)
+![ICMP Ping Between VMs - Request and Reply Visible](images/07-wireshark-icmp-ping-ubuntu.png)
 
-![ICMP Ping to Google](images/08-wireshark-icmp-ping-google.png)
+![ICMP Ping to External Address - Google.com](images/08-wireshark-icmp-ping-google.png)
 
 ---
 
 ## NSG Firewall Configuration
 
 Configured an Azure Network Security Group inbound rule 
-to block ICMP traffic to the Ubuntu VM and watched 
-the impact in real time.
+to block ICMP traffic to the Ubuntu VM and watched the 
+real-time impact on both Wireshark and the command line.
 
-- Started continuous ping from windows-vm to linix-vm
-- Confirmed ongoing replies in Wireshark and PowerShell
-- Opened linix-vm-nsg and added an inbound deny rule
-- Rule: Priority 290 - Protocol ICMP - Action Deny
+- Started continuous ping: ping -t 10.0.0.5
+- Confirmed replies in Wireshark and PowerShell
+- Opened linix-vm-nsg and added inbound rule:
+  Priority 290 - Protocol ICMP - Action Deny
 - Wireshark immediately showed no response found
 - PowerShell showed Request timed out on every line
-- Deleted the deny rule - replies came back within seconds
+- Deleted the rule - replies resumed within seconds
 
-NSG rules take effect immediately without restarting 
-the VM. Priority 290 placed this rule above the default 
-allow rules, which is why traffic stopped the moment 
-it was applied and resumed the moment it was removed.
+The rule took effect without restarting the VM. Priority 
+290 placed it above the default allow rules, which is 
+why traffic stopped the instant it was applied.
 
-![Ping Running Before Rule Applied](images/09-perpetual-ping-before-block.png)
+This is the same logic used when a user loses access to 
+a service and the firewall is suspected. Checking NSG 
+inbound rules and testing with a live ping tells you 
+immediately whether the firewall is the problem.
 
-![NSG Deny Rule Applied](images/10-nsg-deny-rule-created.png)
+![Continuous Ping Running Before Rule](images/09-perpetual-ping-before-block.png)
 
-![Traffic Blocked](images/11-icmp-traffic-blocked.png)
+![NSG Inbound Deny Rule Applied](images/10-nsg-deny-rule-created.png)
 
-![Traffic Restored After Rule Removed](images/12-icmp-traffic-resumed.png)
+![ICMP Traffic Blocked - No Response Found in Wireshark](images/11-icmp-traffic-blocked.png)
+
+![ICMP Traffic Restored After Rule Removal](images/12-icmp-traffic-resumed.png)
 
 ---
 
 ## SSH Analysis
 
 SSH'd into linix-vm from windows-vm using PowerShell 
-and ran Linux commands to confirm remote access over 
-the private VNet connection.
+and ran Linux commands to confirm remote access.
 
-- Connected using: ssh labuser@10.0.0.5
+- Command: ssh labuser@10.0.0.5
 - Authenticated with username and password
-- Ran commands: id, hostname, pwd, ls, whoami
-- Confirmed user labuser, hostname linix-vm, 
-  working directory /home/labuser
+- Ran: id, hostname, pwd, ls, whoami
+- Confirmed: user labuser, hostname linix-vm, 
+  directory /home/labuser
 
-SSH encrypts everything between client and server. 
-Every command and response travels as encrypted packets. 
-The session confirmed full administrative access to 
-the Ubuntu VM from the Windows environment using 
-private IP addressing inside the shared VNet.
+SSH encrypts all traffic between client and server. 
+Every keystroke and response travels as an encrypted 
+packet. This is the protocol IT teams use to remotely 
+access and manage Linux servers. If an SSH connection 
+fails during troubleshooting, checking whether port 22 
+is open in the firewall rules is the first step - which 
+connects directly to the NSG configuration above.
 
 ![SSH Session Active on Ubuntu VM](images/13-ssh-session-active.png)
 
-![SSH Session with Wireshark Running](images/14-wireshark-ssh-traffic.png)
+![SSH Session with Wireshark Capture Running](images/14-wireshark-ssh-traffic.png)
 
 ---
 
 ## DHCP Analysis
 
-Ran ipconfig /renew on windows-vm and captured the 
-full DHCP exchange in Wireshark.
+Ran ipconfig /renew on windows-vm and captured the full 
+DHCP exchange in Wireshark.
 
 - Applied dhcp filter in Wireshark
-- Confirmed no DHCP traffic before running the command
+- Confirmed no DHCP traffic before running command
 - Opened PowerShell as Administrator
 - Ran: ipconfig /renew
-- Watched the full sequence play out in Wireshark
+- Captured the full sequence as it played out
 
 DORA sequence captured:
 1. DHCP Release - client released existing IP lease
-2. DHCP Discover - client broadcast to find DHCP server
+2. DHCP Discover - client broadcast to locate DHCP server
 3. DHCP Offer - server at 168.63.129.16 offered an address
 4. DHCP Request - client requested the offered address
 5. DHCP ACK - server confirmed and assigned 10.0.0.4
 
-The whole process completed in under a second. When a 
-user cannot connect to the network, ipconfig /renew 
-forces this sequence to restart. If any step fails 
-in Wireshark during troubleshooting, you can pinpoint 
-exactly where the DHCP process broke down.
+Full sequence completed in under a second.
 
-![Wireshark Before ipconfig renew](images/15-wireshark-dhcp-before-renew.png)
+ipconfig /renew is one of the most common first responses 
+when a user calls saying they have no network connection. 
+Watching this in Wireshark shows what is actually happening 
+during that command. If Discover goes out but no Offer 
+comes back, the DHCP server is not responding. If Offer 
+comes back but no ACK, the server accepted the request 
+but something failed at confirmation. Knowing which step 
+failed changes where you look next.
 
-![Full DORA Sequence Captured](images/16-wireshark-dhcp-traffic.png)
+![Wireshark Before ipconfig renew - No Traffic](images/15-wireshark-dhcp-before-renew.png)
+
+![Full DORA Sequence Captured in Wireshark](images/16-wireshark-dhcp-traffic.png)
 
 ---
 
@@ -152,24 +165,27 @@ Used nslookup to query two external domains from
 windows-vm and captured DNS traffic in Wireshark.
 
 - Applied dns filter in Wireshark
-- Ran nslookup google.com
-- Ran nslookup disney.com
-- Watched query and response packets for each domain
+- Ran: nslookup google.com
+- Ran: nslookup disney.com
+- Watched query and response packets for each
 
-google.com resolved to multiple addresses including 
-142.250.139.138 and IPv6 range 2607:f8b0:4023:1804.
+google.com resolved to 142.250.139.138 and several 
+other addresses including IPv6 range 2607:f8b0:4023:1804.
 disney.com resolved to 130.211.198.204.
-DNS server for both: 168.63.129.16 (Azure internal resolver).
+DNS server used: 168.63.129.16 (Azure internal resolver).
 
-When a user says they cannot access a website, the 
-first step is checking whether DNS is resolving. 
-Running nslookup and watching the packets in Wireshark 
-shows immediately if the DNS server is responding 
-and returning a valid address.
+DNS is the most common cause of connectivity complaints 
+that are not actually connectivity problems. When a 
+user says they cannot access a website but can ping 
+an IP address directly, DNS is almost always the issue. 
+Running nslookup shows whether the DNS server is 
+responding and returning a valid address. No response 
+from nslookup means the DNS server is unreachable or 
+misconfigured, not the network itself.
 
-![DNS for google.com](images/17-wireshark-dns-google.png)
+![DNS Query and Response for google.com](images/17-wireshark-dns-google.png)
 
-![DNS for disney.com](images/18-wireshark-dns-disney.png)
+![DNS Query and Response for disney.com](images/18-wireshark-dns-disney.png)
 
 ---
 
@@ -179,20 +195,22 @@ Filtered Wireshark for tcp.port == 3389 during an
 active Remote Desktop session with zero user activity.
 
 - Applied filter: tcp.port == 3389
-- Sat completely still - no mouse or keyboard input
-- Watched the packet stream for 10 seconds
+- No mouse movement, no keyboard input
+- Watched the stream for 10 seconds
+- Result: over 45,000 packets captured, all TLSv1.3
 
-Constant non-stop traffic with nothing happening on 
-screen. Over 45,000 packets captured. All traffic 
-was TLS-encrypted (TLSv1.3) over TCP port 3389.
+RDP streams the entire desktop display continuously 
+to the client. Every screen refresh and background 
+process generates encrypted packets regardless of 
+what the user is doing. It does not wait for input 
+the way ICMP or DNS do.
 
-RDP streams the entire desktop display continuously. 
-Every screen refresh, cursor blink, and background 
-process generates packets. It does not wait for user 
-input the way ICMP or DNS do. This is why RDP sessions 
-consume more bandwidth than other remote access methods 
-and why display compression settings matter on 
-slow connections.
+This explains why RDP feels slow on a congested network 
+even when the user is not actively doing anything. It 
+also explains why IT teams reduce display quality and 
+color depth when connecting to remote machines over 
+low-bandwidth links. The stream never stops, so 
+bandwidth management matters throughout the session.
 
 ![RDP Continuous Traffic on tcp.port 3389](images/19-wireshark-rdp-nonstop.png)
 
@@ -203,14 +221,9 @@ slow connections.
 All Azure resources deleted after the project was 
 complete to prevent ongoing compute costs.
 
-Deleted the entire resource group RG-Network-Activities 
-which removed all 11 dependent resources at once 
-including both VMs, the Virtual Network, NSG, public 
-IPs, network interfaces, and OS disks.
-
-Deleting the resource group is cleaner than removing 
-resources individually. Everything tied to the group 
-is removed in a single operation with nothing left 
-running in the background.
+Deleted resource group RG-Network-Activities which 
+removed all 11 dependent resources at once - both VMs, 
+Virtual Network, NSG, public IPs, network interfaces, 
+and OS disks - in a single operation.
 
 ![Resource Group Deletion Confirmation](images/21-resource-group-deleting.png)
