@@ -28,4 +28,4 @@ with real-time Azure NSG firewall configuration and testing.
 
 ## Technologies Used
 Microsoft Azure - Windows 10 - Ubuntu 24.04 - Wireshark - 
-PowerShell-NSG-VNet-ICMP-SSH-DHCP-DNS-RDP-TCP/IP
+PowerShell - NSG - VNet - ICMP - SSH - DHCP - DNS - RDP - TCP/IP
